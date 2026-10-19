@@ -1,47 +1,244 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt Planner</title>
-
-    <link rel="stylesheet" href="css/style.css">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt Planner</title>
 </head>
 
-<body>
+<body style="font-family:Segoe UI;background:#f1f5f9;padding:20px;">
 
-<div class="container">
+<h1 style="color:#0f172a;">📊 Gantt Planner</h1>
 
-    <h1>📊 Gantt Planner</h1>
+<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
 
-    <div class="formulario">
+<h2>Nueva tarea</h2>
 
-        <input type="text" id="taskName" placeholder="Nombre tarea">
+<input type="text" id="taskName" placeholder="Nombre de la tarea">
 
-        <input type="date" id="startDate">
+<input type="date" id="startDate">
 
-        <input type="date" id="endDate">
+<input type="date" id="endDate">
 
-        <button onclick="addTask()">Agregar</button>
+<button onclick="addTask()"
+style="background:#2563eb;color:white;padding:10px;border:none;border-radius:5px;">
+Agregar
+</button>
 
-        <button onclick="saveProject()">Guardar</button>
+<button onclick="generateViews()"
+style="background:#16a34a;color:white;padding:10px;border:none;border-radius:5px;">
+Generar Gantt
+</button>
 
-        <button onclick="exportPDF()">Exportar PDF</button>
-
-    </div>
-
-    <div id="dashboard"></div>
-
-    <div id="checklist"></div>
-
-    <div id="gantt"></div>
+<button onclick="window.print()"
+style="background:#ea580c;color:white;padding:10px;border:none;border-radius:5px;">
+PDF
+</button>
 
 </div>
 
-<script src="js/app.js"></script>
+<div id="summary"
+style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+<h2>Resumen</h2>
+<p>Total tareas: 0</p>
+</div>
 
-</body>
-</html>
+<div id="checklist"
+style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+<h2>Checklist</h2>
+</div>
+
+<div id="gantt"
+style="background:white;padding:15px;border-radius:10px;">
+<h2>Diagrama de Gantt</h2>
+</div>
+
+<script>
+
+let tasks=[];
+
+function addTask(){
+
+const name=document.getElementById("taskName").value;
+const start=document.getElementById("startDate").value;
+const end=document.getElementById("endDate").value;
+
+if(!name || !start || !end){
+
+alert("Complete todos los campos");
+return;
+
+}
+
+tasks.push({
+name,
+start,
+end,
+done:false
+});
+
+document.getElementById("taskName").value="";
+
+updateSummary();
+
+}
+
+function updateSummary(){
+
+document.getElementById("summary").innerHTML=
+`
+<h2>Resumen</h2>
+<p>Total tareas: ${tasks.length}</p>
+`;
+
+}
+
+function generateViews(){
+
+generateChecklist();
+generateGantt();
+
+}
+
+function generateChecklist(){
+
+let html="<h2>Checklist</h2>";
+
+tasks.forEach((task,index)=>{
+
+html+=`
+<div style="margin-bottom:8px;">
+
+<input
+type="checkbox"
+onchange="toggleTask(${index})">
+
+${task.name}
+
+</div>
+`;
+
+});
+
+document.getElementById("checklist").innerHTML=html;
+
+}
+
+function toggleTask(index){
+
+tasks[index].done=!tasks[index].done;
+
+generateGantt();
+
+}
+
+function generateGantt(){
+
+if(tasks.length===0)return;
+
+const minDate=new Date(
+Math.min(...tasks.map(x=>new Date(x.start)))
+);
+
+const maxDate=new Date(
+Math.max(...tasks.map(x=>new Date(x.end)))
+);
+
+const totalDays=
+Math.ceil((maxDate-minDate)/(1000*60*60*24))+1;
+
+let html="<h2>Diagrama de Gantt</h2>";
+
+html+="<div style='display:flex;margin-bottom:10px;'>";
+
+for(let i=0;i<totalDays;i++){
+
+let current=new Date(minDate);
+
+current.setDate(minDate.getDate()+i);
+
+const weekday=[
+"Dom","Lun","Mar","Mié","Jue","Vie","Sáb"
+][current.getDay()];
+
+html+=`
+<div style="
+width:40px;
+font-size:11px;
+text-align:center;
+padding:3px;
+border:1px solid #cbd5e1;
+background:#e2e8f0;
+">
+${weekday}<br>
+${current.getDate()}
+</div>
+`;
+
+}
+
+html+="</div>";
+
+tasks.forEach(task=>{
+
+const start=new Date(task.start);
+const end=new Date(task.end);
+
+const offset=
+Math.ceil((start-minDate)/(1000*60*60*24));
+
+const duration=
+Math.ceil((end-start)/(1000*60*60*24))+1;
+
+let color="#3b82f6";
+
+if(task.done){
+color="#22c55e";
+}
+
+html+=`
+<div style="
+display:flex;
+align-items:center;
+margin-bottom:10px;">
+        
+<div style="
+width:180px;
+font-weight:bold;">
+${task.name}
+</div>
+
+<div style="
+position:relative;
+height:28px;
+flex:1;
+background:#e5e7eb;">
+            
+<div style="
+position:absolute;
+left:${offset*40}px;
+width:${duration*40}px;
+height:100%;
+background:${color};
+border-radius:5px;
+color:white;
+font-size:12px;
+display:flex;
+align-items:center;
+justify-content:center;">
+${duration} días
+</div>
+
+</div>
+</div>
+`;
+
+});
+
+document.getElementById("gantt").innerHTML=html;
+
+}
+
+</script>
+
+<
