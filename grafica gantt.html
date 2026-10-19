@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Planner</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📊 Gantt Planner</h1>
+
+    <div class="formulario">
+
+        <input type="text" id="taskName" placeholder="Nombre tarea">
+
+        <input type="date" id="startDate">
+
+        <input type="date" id="endDate">
+
+        <button onclick="addTask()">Agregar</button>
+
+        <button onclick="saveProject()">Guardar</button>
+
+        <button onclick="exportPDF()">Exportar PDF</button>
+
+    </div>
+
+    <div id="dashboard"></div>
+
+    <div id="checklist"></div>
+
+    <div id="gantt"></div>
+
+</div>
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
