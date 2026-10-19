@@ -1,0 +1,55 @@
+body{
+    font-family:Segoe UI;
+    background:#f5f5f5;
+    margin:20px;
+}
+
+.container{
+    max-width:1400px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+}
+
+.formulario{
+    margin-bottom:20px;
+}
+
+input{
+    padding:8px;
+}
+
+button{
+    padding:10px;
+    border:none;
+    background:#0078d7;
+    color:white;
+    cursor:pointer;
+    border-radius:4px;
+}
+
+#gantt{
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:8px;
+}
+
+.task-row{
+    display:flex;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+.task-name{
+    width:200px;
+}
+
+.bar{
+    height:30px;
+    background:#28a745;
+    border-radius:5px;
+}
+``
