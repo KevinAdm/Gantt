@@ -1,244 +1,146 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gantt Planner</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px;background:#f5f7fa}
+.container{max-width:1200px;margin:auto}
+.card{background:white;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+input,button{padding:8px;margin:5px}
+button{background:#0078d4;color:white;border:none;border-radius:5px;cursor:pointer}
+button:hover{background:#005ea6}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+#gantt{overflow-x:auto}
+.gantt-row{display:flex;align-items:center;margin:8px 0}
+.task-name{width:180px;font-weight:bold}
+.timeline{position:relative;height:30px;flex:1;background:#eee;border-radius:5px}
+.bar{position:absolute;height:100%;background:#28a745;border-radius:5px;color:white;font-size:12px;display:flex;align-items:center;justify-content:center}
+.check-item{margin:6px 0}
+</style>
 </head>
+<body>
+<div class="container">
 
-<body style="font-family:Segoe UI;background:#f1f5f9;padding:20px;">
-
-<h1 style="color:#0f172a;">📊 Gantt Planner</h1>
-
-<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
-
-<h2>Nueva tarea</h2>
-
-<input type="text" id="taskName" placeholder="Nombre de la tarea">
-
+<div class="card">
+<h2>Ingreso de tareas</h2>
+<input type="text" id="taskName" placeholder="Tarea">
 <input type="date" id="startDate">
-
 <input type="date" id="endDate">
-
-<button onclick="addTask()"
-style="background:#2563eb;color:white;padding:10px;border:none;border-radius:5px;">
-Agregar
-</button>
-
-<button onclick="generateViews()"
-style="background:#16a34a;color:white;padding:10px;border:none;border-radius:5px;">
-Generar Gantt
-</button>
-
-<button onclick="window.print()"
-style="background:#ea580c;color:white;padding:10px;border:none;border-radius:5px;">
-PDF
-</button>
-
+<button onclick="addTask()">Agregar</button>
 </div>
 
-<div id="summary"
-style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
-<h2>Resumen</h2>
-<p>Total tareas: 0</p>
+<div class="card">
+<h2>Lista de tareas</h2>
+<table>
+<thead>
+<tr>
+<th>Tarea</th>
+<th>Inicio</th>
+<th>Fin</th>
+</tr>
+</thead>
+<tbody id="taskTable"></tbody>
+</table>
+<button onclick="generateViews()">Generar Gantt</button>
 </div>
 
-<div id="checklist"
-style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+<div class="card">
 <h2>Checklist</h2>
+<div id="checklist"></div>
 </div>
 
-<div id="gantt"
-style="background:white;padding:15px;border-radius:10px;">
+<div class="card">
 <h2>Diagrama de Gantt</h2>
+<div id="gantt"></div>
+</div>
+
 </div>
 
 <script>
-
-let tasks=[];
+const tasks=[];
 
 function addTask(){
+ const name=document.getElementById('taskName').value;
+ const start=document.getElementById('startDate').value;
+ const end=document.getElementById('endDate').value;
 
-const name=document.getElementById("taskName").value;
-const start=document.getElementById("startDate").value;
-const end=document.getElementById("endDate").value;
+ if(!name||!start||!end){
+   alert('Complete todos los campos');
+   return;
+ }
 
-if(!name || !start || !end){
-
-alert("Complete todos los campos");
-return;
-
+ tasks.push({name,start,end,done:false});
+ renderTable();
 }
 
-tasks.push({
-name,
-start,
-end,
-done:false
-});
+function renderTable(){
+ const tbody=document.getElementById('taskTable');
+ tbody.innerHTML='';
 
-document.getElementById("taskName").value="";
-
-updateSummary();
-
-}
-
-function updateSummary(){
-
-document.getElementById("summary").innerHTML=
-`
-<h2>Resumen</h2>
-<p>Total tareas: ${tasks.length}</p>
-`;
-
+ tasks.forEach(t=>{
+   tbody.innerHTML+=`<tr>
+      <td>${t.name}</td>
+      <td>${t.start}</td>
+      <td>${t.end}</td>
+   </tr>`;
+ });
 }
 
 function generateViews(){
-
-generateChecklist();
-generateGantt();
-
+ generateChecklist();
+ generateGantt();
 }
 
 function generateChecklist(){
+ const div=document.getElementById('checklist');
+ div.innerHTML='';
 
-let html="<h2>Checklist</h2>";
-
-tasks.forEach((task,index)=>{
-
-html+=`
-<div style="margin-bottom:8px;">
-
-<input
-type="checkbox"
-onchange="toggleTask(${index})">
-
-${task.name}
-
-</div>
-`;
-
-});
-
-document.getElementById("checklist").innerHTML=html;
-
-}
-
-function toggleTask(index){
-
-tasks[index].done=!tasks[index].done;
-
-generateGantt();
-
+ tasks.forEach((t,i)=>{
+  div.innerHTML+=`
+   <div class='check-item'>
+      <input type='checkbox' onchange='tasks[${i}].done=this.checked'>
+      ${t.name}
+   </div>`;
+ });
 }
 
 function generateGantt(){
+ const gantt=document.getElementById('gantt');
+ gantt.innerHTML='';
 
-if(tasks.length===0)return;
+ if(tasks.length===0) return;
 
-const minDate=new Date(
-Math.min(...tasks.map(x=>new Date(x.start)))
-);
+ const minDate=new Date(Math.min(...tasks.map(t=>new Date(t.start))));
+ const maxDate=new Date(Math.max(...tasks.map(t=>new Date(t.end))));
+ const totalDays=Math.ceil((maxDate-minDate)/(1000*60*60*24))+1;
 
-const maxDate=new Date(
-Math.max(...tasks.map(x=>new Date(x.end)))
-);
+ tasks.forEach(t=>{
+   const start=new Date(t.start);
+   const end=new Date(t.end);
 
-const totalDays=
-Math.ceil((maxDate-minDate)/(1000*60*60*24))+1;
+   const offset=Math.ceil((start-minDate)/(1000*60*60*24));
+   const duration=Math.ceil((end-start)/(1000*60*60*24))+1;
 
-let html="<h2>Diagrama de Gantt</h2>";
+   const row=document.createElement('div');
+   row.className='gantt-row';
 
-html+="<div style='display:flex;margin-bottom:10px;'>";
+   row.innerHTML=`
+      <div class='task-name'>${t.name}</div>
+      <div class='timeline'>
+         <div class='bar'
+              style='left:${(offset/totalDays)*100}%;width:${(duration/totalDays)*100}%'>
+              ${duration} d
+         </div>
+      </div>`;
 
-for(let i=0;i<totalDays;i++){
-
-let current=new Date(minDate);
-
-current.setDate(minDate.getDate()+i);
-
-const weekday=[
-"Dom","Lun","Mar","Mié","Jue","Vie","Sáb"
-][current.getDay()];
-
-html+=`
-<div style="
-width:40px;
-font-size:11px;
-text-align:center;
-padding:3px;
-border:1px solid #cbd5e1;
-background:#e2e8f0;
-">
-${weekday}<br>
-${current.getDate()}
-</div>
-`;
-
+   gantt.appendChild(row);
+ });
 }
-
-html+="</div>";
-
-tasks.forEach(task=>{
-
-const start=new Date(task.start);
-const end=new Date(task.end);
-
-const offset=
-Math.ceil((start-minDate)/(1000*60*60*24));
-
-const duration=
-Math.ceil((end-start)/(1000*60*60*24))+1;
-
-let color="#3b82f6";
-
-if(task.done){
-color="#22c55e";
-}
-
-html+=`
-<div style="
-display:flex;
-align-items:center;
-margin-bottom:10px;">
-        
-<div style="
-width:180px;
-font-weight:bold;">
-${task.name}
-</div>
-
-<div style="
-position:relative;
-height:28px;
-flex:1;
-background:#e5e7eb;">
-            
-<div style="
-position:absolute;
-left:${offset*40}px;
-width:${duration*40}px;
-height:100%;
-background:${color};
-border-radius:5px;
-color:white;
-font-size:12px;
-display:flex;
-align-items:center;
-justify-content:center;">
-${duration} días
-</div>
-
-</div>
-</div>
-`;
-
-});
-
-document.getElementById("gantt").innerHTML=html;
-
-}
-
 </script>
 
-<
+</body>
+</html>
